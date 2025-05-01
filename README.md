@@ -29,12 +29,16 @@ cd computer-graphics
 
 Step 2: Install Dependencies
 On Ubuntu:
-`sudo apt-get install libglfw3 libglfw3-dev libglm-dev`
+```bash
+sudo apt-get install libglfw3 libglfw3-dev libglm-dev
+```
 > [!REMINDER]
 > For GLAD: Add where/how to get it (since it's not apt-get installable).
 
 Step 3: Run the Project
-`make run`
+```bash
+make run
+```
 
 ## Usage
 
