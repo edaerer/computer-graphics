@@ -2,6 +2,7 @@
 
 This project helps you understand the basics of OpenGL by creating a 3D car object in a custom scene. It demonstrates the use of shaders, textures, lighting, camera controls, and basic 3D object rendering.
 
+
 ## Features
 
 - Rendering 2D and 3D objects
@@ -10,14 +11,17 @@ This project helps you understand the basics of OpenGL by creating a 3D car obje
 - Simple lighting
 - Shader program (vertex and fragment shaders)
 
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your machine:
+
 - C++ compiler
 - OpenGL (version 3.3 or higher)
 - GLFW (for window management and input handling)
 - GLAD (for loading OpenGL functions)
 - GLM (for matrix and vector operations)
+
 
 ## Installation
 
@@ -40,8 +44,24 @@ sudo apt-get install libglfw3 libglfw3-dev libglm-dev
 make run
 ```
 
+
 ## Usage
 
 Once the project is running, you can interact with the scene using the following controls:
+
 - W/A/S/D: Move the camera forward, left, backward, and right.
 - Mouse movement: Rotate the camera view.
+
+
+## Perspectives
+
+Here are some screenshots from the running project:
+
+1. With Lighting
+![side of the car with lighting](/screenshots/side-1.png)
+![side of the car with lighting](/screenshots/side-2.png)
+![front of the car with lighting](/screenshots/front.png)
+
+2. Without Lighting
+![side of the car without lighting](/screenshots/bright-1.png)
+![side of the car without lighting](/screenshots/bright-2.png)
