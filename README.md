@@ -21,13 +21,13 @@ Before you begin, ensure you have the following installed on your machine:
 
 ## Installation
 
-Step 1: Clone the Repository
+***Step 1:*** Clone the Repository
 ```bash
 git clone https://github.com/edaerer/computer-graphics.git
 cd computer-graphics
 ```
 
-Step 2: Install Dependencies
+***Step 2:*** Install Dependencies
 On Ubuntu:
 ```bash
 sudo apt-get install libglfw3 libglfw3-dev libglm-dev
@@ -35,7 +35,7 @@ sudo apt-get install libglfw3 libglfw3-dev libglm-dev
 > [!NOTE]
 > For GLAD: Add where/how to get it (since it's not apt-get installable).
 
-Step 3: Run the Project
+***Step 3:*** Run the Project
 ```bash
 make run
 ```
