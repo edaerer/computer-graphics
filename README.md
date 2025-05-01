@@ -32,7 +32,7 @@ On Ubuntu:
 ```bash
 sudo apt-get install libglfw3 libglfw3-dev libglm-dev
 ```
-> [!REMINDER]
+> [!NOTE]
 > For GLAD: Add where/how to get it (since it's not apt-get installable).
 
 Step 3: Run the Project
