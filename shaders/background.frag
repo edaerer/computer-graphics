@@ -29,5 +29,5 @@ void main() {
     FragColor = texture(tex0, TexCoord) * vec4(result, 1.0f);
 
     // For no lighting
-    // FragColor = texture(tex0, TexCoord);
+    FragColor = texture(tex0, TexCoord);
 }
