@@ -1,14 +1,14 @@
-CC = g++
-SRC = $(wildcard src/*.cpp) /usr/include/glad/glad.c
-INCLUDES = -Iinclude
-LIBS = -lglfw -ldl
-OUT = out
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Iinclude -I/usr/include
+LDFLAGS = -lglfw -ldl -lGL -pthread
 
-all:
-	$(CC) $(SRC) $(INCLUDES) $(LIBS) -o $(OUT)
+SRC = src/glad.c main.cpp
+OBJ = $(SRC:.cpp=.o)
 
-run: all
-	./$(OUT)
+all: fish_swim
+
+fish_swim: $(SRC)
+	$(CXX) $(CXXFLAGS) -o fish_swim $(SRC) $(LDFLAGS)
 
 clean:
-	rm -f $(OUT)
+	rm -f fish_swim *.o
