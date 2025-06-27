@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Iinclude -I/usr/include
-LDFLAGS = -lglfw -ldl -lGL -pthread
+LDFLAGS = -lglfw -ldl -lGL -pthread -lassimp
 
 SRC = src/glad.c main.cpp
 OBJ = $(SRC:.cpp=.o)
