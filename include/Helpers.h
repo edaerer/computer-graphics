@@ -1,12 +1,8 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_EASY_FONT_IMPLEMENTATION
-#include "stb_easy_font.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -136,114 +132,6 @@ unsigned int createShaderProgram(const char* vertexPath, const char* fragmentPat
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
-}
-
-MeshData loadOBJ(const std::string& filename)
-{
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-
-    // Get the directory of the OBJ file for relative texture paths
-    std::string objDir = filename.substr(0, filename.find_last_of('/') + 1);
-
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str(), objDir.c_str());
-
-    if (!warn.empty()) std::cout << "WARN: " << warn << std::endl;
-    if (!err.empty()) std::cerr << "ERR: " << err << std::endl;
-    if (!ret) exit(1);
-
-    std::cout << "Materials loaded: " << materials.size() << std::endl;
-    for (size_t i = 0; i < materials.size(); ++i) {
-        std::cout << "Material #" << i << ": " << materials[i].name << std::endl;
-        std::cout << " Diffuse texture: " << materials[i].diffuse_texname << std::endl;
-    }
-
-    glm::vec3 matColor(1.0f, 0.0f, 0.0f); // Default red
-    unsigned int textureID = 0;
-    bool hasTexture = false;
-
-    // Get the material ID of the first shape
-    if (!shapes.empty() && !shapes[0].mesh.material_ids.empty()) {
-        int mat_id = shapes[0].mesh.material_ids[0];
-        if (mat_id >= 0 && mat_id < static_cast<int>(materials.size())) {
-            const auto& mat = materials[mat_id];
-            matColor = glm::vec3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]);
-
-            if (!mat.diffuse_texname.empty()) {
-                std::string texturePath = mat.diffuse_texname;
-                std::string altTexturePath = objDir + mat.diffuse_texname;
-
-                textureID = loadTexture(texturePath);
-            }
-        } else {
-            std::cout << "Material ID out of range or invalid for shape.\n";
-        }
-    } else {
-        std::cout << "No material ID available for shape.\n";
-    }
-
-    std::vector<float> vertices; // pos + normal + texcoord
-    std::vector<unsigned int> indices;
-
-    for (const auto& shape : shapes) {
-        for (const auto& index : shape.mesh.indices) {
-            float vx = attrib.vertices[3 * index.vertex_index + 0];
-            float vy = attrib.vertices[3 * index.vertex_index + 1];
-            float vz = attrib.vertices[3 * index.vertex_index + 2];
-
-            float nx = 0.f, ny = 0.f, nz = 0.f;
-            if (index.normal_index >= 0) {
-                nx = attrib.normals[3 * index.normal_index + 0];
-                ny = attrib.normals[3 * index.normal_index + 1];
-                nz = attrib.normals[3 * index.normal_index + 2];
-            }
-
-            float tx = 0.f, ty = 0.f;
-            if (index.texcoord_index >= 0) {
-                tx = attrib.texcoords[2 * index.texcoord_index + 0];
-                ty = attrib.texcoords[2 * index.texcoord_index + 1];
-            }
-
-            vertices.insert(vertices.end(), { vx, vy, vz, nx, ny, nz, tx, ty });
-            indices.push_back((unsigned int)(indices.size()));
-        }
-    }
-
-    Mesh mesh;
-    glGenVertexArrays(1, &mesh.VAO);
-    glGenBuffers(1, &mesh.VBO);
-    glGenBuffers(1, &mesh.EBO);
-
-    glBindVertexArray(mesh.VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    // position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // normal
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    // texcoord
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindVertexArray(0);
-
-    mesh.indexCount = indices.size();
-    mesh.textureID = textureID;
-    mesh.hasTexture = hasTexture;
-
-    MeshData result;
-    result.mesh = mesh;
-    result.color = matColor;
-
-    return result;
 }
 
 MeshData loadFBX(const std::string& filepath)
@@ -381,47 +269,6 @@ MeshData loadFBX(const std::string& filepath)
     result.color = matColor;
 
     return result;
-}
-
-void renderText(const char* text, float x, float y, glm::vec3 color, unsigned int shaderProgram, const unsigned int SCR_WIDTH, const unsigned int SCR_HEIGHT)
-{
-    static char buffer[99999]; // vertex buffer for stb_easy_font
-
-    int num_quads = stb_easy_font_print(x, y, (char*)text, NULL, buffer, sizeof(buffer));
-
-    static unsigned int vao = 0, vbo = 0;
-    if (vao == 0) {
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-    }
-
-    glBindVertexArray(vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, num_quads * 4 * 2 * sizeof(float), buffer, GL_DYNAMIC_DRAW);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-
-
-    glUseProgram(shaderProgram);
-
-    // Send uniforms
-    unsigned int colorLoc = glGetUniformLocation(shaderProgram, "textColor");
-    unsigned int projLoc = glGetUniformLocation(shaderProgram, "projection");
-
-    glm::mat4 ortho = glm::ortho(0.0f, (float)SCR_WIDTH, (float)SCR_HEIGHT, 0.0f);
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(ortho));
-    glUniform3fv(colorLoc, 1, glm::value_ptr(color));
-
-    // Draw quads
-    glDrawArrays(GL_TRIANGLES, 0, num_quads * 6);
-
-
-    // Cleanup
-    glDisableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
 }
 
 #endif

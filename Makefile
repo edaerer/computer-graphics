@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Iinclude -I/usr/include
-LDFLAGS = -lglfw -ldl -lGL -pthread -lassimp
+CXXFLAGS = -std=c++17 -Wall -Iinclude -I/usr/include -I/usr/include/freetype2
+LDFLAGS = -lglfw -ldl -lGL -pthread -lassimp -lfreetype
 
 SRC = src/glad.c main.cpp
 OBJ = $(SRC:.cpp=.o)
