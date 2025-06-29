@@ -65,3 +65,6 @@
     ```bash
     ./fish_swim
     ```
+![Screenshot_20250629_181143](https://github.com/user-attachments/assets/65bc1466-a340-4fab-8f08-e150c064878b)
+
+
