@@ -1,76 +1,5 @@
 #include "Helpers.h"
-#include <sstream>
-#include <iomanip>
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include <map>
-
-struct Character {
-    GLuint TextureID;   // Glyph texture
-    glm::ivec2 Size;    // Glyph size
-    glm::ivec2 Bearing; // Offset from baseline
-    GLuint Advance;     // Horizontal offset to next glyph
-};
-
-std::map<GLchar, Character> Characters;
-
-void loadFont(const std::string& fontPath) {
-    FT_Library ft;
-    FT_Face face;
-    FT_Init_FreeType(&ft);
-    if (FT_New_Face(ft, fontPath.c_str(), 0, &face)) {
-        std::cerr << "ERROR::FREETYPE: Failed to load font\n";
-        FT_Done_FreeType(ft);
-        return; // or handle error properly
-    }
-    FT_Set_Pixel_Sizes(face, 0, 48);
-
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
-
-    for (GLubyte c = 0; c < 128; c++) {
-        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
-            std::cerr << "ERROR::FREETYPE: Failed to load Glyph " << c << '\n';
-            continue;
-        }
-
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RED,
-            face->glyph->bitmap.width,
-            face->glyph->bitmap.rows,
-            0,
-            GL_RED,
-            GL_UNSIGNED_BYTE,
-            face->glyph->bitmap.buffer
-        );
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        Character character = {
-            texture,
-            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            static_cast<GLuint>(face->glyph->advance.x)
-        };
-        Characters.insert(std::pair<char, Character>(c, character));
-    }
-
-    FT_Done_Face(face);
-    FT_Done_FreeType(ft);
-}
-
-
-const unsigned int SCR_WIDTH = 1000;
-const unsigned int SCR_HEIGHT = 800;
-bool firstPerson = false;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 glm::vec3 cameraPos, cameraFront, cameraUp;
@@ -82,57 +11,16 @@ bool firstMouse = true;
 glm::vec3 thirdPersonCameraPos(0.0f, 6.0f, 13.0f);
 glm::vec3 thirdPersonCameraFront(0.0f, 0.0f, -1.0f);
 glm::vec3 thirdPersonCameraUp(0.0f, 1.0f, 0.0f);
-
-// UI Variables
 bool showUI = true;
 float uiUpdateTimer = 0.0f;
 const float UI_UPDATE_INTERVAL = 0.1f;
 
-// Text rendering variables
-unsigned int textShaderProgram;
-unsigned int textVAO, textVBO;
-
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
-void initTextRendering();
-void renderText(const std::string& text, float x, float y, float scale, glm::vec3 color);
-void renderUI(float swimTime, glm::vec3 fishPos, glm::vec3 octopusPos, glm::vec3 shipPos);
-
-// Simple text shader sources
-const char* textVertexShaderSource = R"(
-#version 330 core
-layout (location = 0) in vec4 vertex; // pos.xy, texCoord.xy
-
-out vec2 TexCoords;
-uniform mat4 projection;
-
-void main()
-{
-    gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);
-    TexCoords = vertex.zw;
-}
-)";
-
-const char* textFragmentShaderSource = R"(
-#version 330 core
-in vec2 TexCoords;
-out vec4 FragColor;
-
-uniform sampler2D text;
-uniform vec3 textColor;
-
-void main()
-{
-    float alpha = texture(text, TexCoords).r;
-    FragColor = vec4(textColor, alpha);
-}
-)";
 
 int main()
 {
-    
-
     if (!glfwInit()) {
         std::cerr << "Failed to init GLFW\n";
         return -1;
@@ -426,161 +314,6 @@ int main()
     glfwTerminate();
 
     return 0;
-}
-
-void initTextRendering()
-{
-    // Compile text shaders
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &textVertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &textFragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    textShaderProgram = glCreateProgram();
-    glAttachShader(textShaderProgram, vertexShader);
-    glAttachShader(textShaderProgram, fragmentShader);
-    glLinkProgram(textShaderProgram);
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    // Set up text rendering VAO/VBO
-    glGenVertexArrays(1, &textVAO);
-    glGenBuffers(1, &textVBO);
-    glBindVertexArray(textVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
-
-void renderText(const std::string& text, float x, float y, float scale, glm::vec3 color)
-{
-    glUseProgram(textShaderProgram);
-    glUniform3f(glGetUniformLocation(textShaderProgram, "textColor"), color.x, color.y, color.z);
-
-    glm::mat4 projection = glm::ortho(0.0f, (float)SCR_WIDTH, 0.0f, (float)SCR_HEIGHT);
-    glUniformMatrix4fv(glGetUniformLocation(textShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(textVAO);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_DEPTH_TEST);
-
-    for (char c : text) {
-        Character ch = Characters[c];
-
-        float xpos = x + ch.Bearing.x * scale;
-        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
-
-        float w = ch.Size.x * scale;
-        float h = ch.Size.y * scale;
-
-        float vertices[6][4] = {
-            { xpos,     ypos + h,   0.0f, 0.0f },
-            { xpos,     ypos,       0.0f, 1.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
-
-            { xpos,     ypos + h,   0.0f, 0.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
-            { xpos + w, ypos + h,   1.0f, 0.0f }
-        };
-
-        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
-
-        glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        x += (ch.Advance >> 6) * scale; // bitshift by 6 to get pixel value
-    }
-
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-}
-
-
-void renderUI(float swimTime, glm::vec3 fishPos, glm::vec3 octopusPos, glm::vec3 shipPos)
-{
-    float yOffset = SCR_HEIGHT - 40;
-    float lineHeight = 25;
-    
-    // Title
-    renderText("UNDERWATER ANIMATION", 20, yOffset, 1.2f, glm::vec3(0.0f, 0.8f, 1.0f));
-    yOffset -= lineHeight * 1.5f;
-    
-    // Animation time
-    std::stringstream timeStr;
-    timeStr << "Time: " << std::fixed << std::setprecision(1) << swimTime << "s";
-    renderText(timeStr.str(), 20, yOffset, 0.8f, glm::vec3(1.0f, 1.0f, 1.0f));
-    yOffset -= lineHeight;
-    
-    // Camera mode
-    std::string cameraMode = firstPerson ? "Camera: First Person" : "Camera: Third Person";
-    renderText(cameraMode, 20, yOffset, 0.8f, glm::vec3(1.0f, 1.0f, 1.0f));
-    yOffset -= lineHeight * 1.5f;
-    
-    // Object positions
-    renderText("POSITIONS:", 20, yOffset, 1.0f, glm::vec3(1.0f, 0.8f, 0.0f));
-    yOffset -= lineHeight;
-    
-    // Fish position
-    std::stringstream fishStr;
-    fishStr << "Fish: (" << std::fixed << std::setprecision(1) 
-            << fishPos.x << ", " << fishPos.y << ", " << fishPos.z << ")";
-    renderText(fishStr.str(), 20, yOffset, 0.7f, glm::vec3(0.0f, 1.0f, 0.5f));
-    yOffset -= lineHeight * 0.8f;
-    
-    // Octopus position
-    std::stringstream octStr;
-    octStr << "Octopus: (" << std::fixed << std::setprecision(1) 
-           << octopusPos.x << ", " << octopusPos.y << ", " << octopusPos.z << ")";
-    renderText(octStr.str(), 20, yOffset, 0.7f, glm::vec3(1.0f, 0.5f, 1.0f));
-    yOffset -= lineHeight * 0.8f;
-    
-    // Ship position
-    std::stringstream shipStr;
-    shipStr << "Ship: (" << std::fixed << std::setprecision(1) 
-            << shipPos.x << ", " << shipPos.y << ", " << shipPos.z << ")";
-    renderText(shipStr.str(), 20, yOffset, 0.7f, glm::vec3(0.8f, 0.8f, 0.8f));
-    yOffset -= lineHeight * 1.5f;
-    
-    // Animation status
-    renderText("ANIMATIONS:", 20, yOffset, 1.0f, glm::vec3(1.0f, 0.8f, 0.0f));
-    yOffset -= lineHeight;
-    
-    renderText("Fish: Circular swimming + bobbing", 20, yOffset, 0.7f, glm::vec3(0.8f, 0.8f, 0.8f));
-    yOffset -= lineHeight * 0.8f;
-    
-    renderText("Octopus: Gentle swaying + rotation", 20, yOffset, 0.7f, glm::vec3(0.8f, 0.8f, 0.8f));
-    yOffset -= lineHeight * 0.8f;
-    
-    renderText("Ship: Ocean-like movement", 20, yOffset, 0.7f, glm::vec3(0.8f, 0.8f, 0.8f));
-    yOffset -= lineHeight * 1.5f;
-    
-    // Controls
-    renderText("CONTROLS:", 20, yOffset, 1.0f, glm::vec3(1.0f, 0.8f, 0.0f));
-    yOffset -= lineHeight;
-    
-    renderText("C - Toggle Camera | ESC - Exit", 20, yOffset, 0.7f, glm::vec3(0.8f, 0.8f, 0.8f));
-    yOffset -= lineHeight * 0.8f;
-    
-    renderText("WASD - Move Camera | Mouse - Look Around", 20, yOffset, 0.7f, glm::vec3(0.8f, 0.8f, 0.8f));
-    
-    // Animation indicator (bottom right)
-    int animFrame = (int)(swimTime * 4) % 4;
-    std::string animChars[] = {"|", "/", "-", "\\"};
-    renderText("Running " + animChars[animFrame], SCR_WIDTH - 100, 20, 0.8f, glm::vec3(0.0f, 1.0f, 0.0f));
 }
 
 void processInput(GLFWwindow* window)
