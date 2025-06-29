@@ -65,6 +65,9 @@
     ```bash
     ./fish_swim
     ```
-![Screenshot_20250629_181143](https://github.com/user-attachments/assets/65bc1466-a340-4fab-8f08-e150c064878b)
+4. **Görseller**
 
+![Screenshot_20250629_181341](https://github.com/user-attachments/assets/ffd74440-1baa-4caa-bef6-4094acbaaab2)
+![Screenshot_20250629_181900](https://github.com/user-attachments/assets/eb466946-ff8f-4c61-bd3c-a4630347068b)
+![Screenshot_20250629_181143](https://github.com/user-attachments/assets/44bfc3ce-e8b5-404b-9ad1-bc79cd020ff8)
 
