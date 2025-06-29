@@ -71,3 +71,7 @@
 ![Screenshot_20250629_181900](https://github.com/user-attachments/assets/eb466946-ff8f-4c61-bd3c-a4630347068b)
 ![Screenshot_20250629_181143](https://github.com/user-attachments/assets/44bfc3ce-e8b5-404b-9ad1-bc79cd020ff8)
 
+5. **Youtube Tanıtım Videosu**
+
+https://youtu.be/WuGWYiXfXCY
+
